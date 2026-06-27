@@ -2,42 +2,43 @@ name: Build Docker Push Image
 
 on:
   push:
-    branches: [ "main" ]        # 推送到 main 分支时触发
-  workflow_dispatch:            # 允许手动触发
+    branches: [ "main" ]
+  workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
+  packages: write   # 允许推送镜像到 GHCR
 
 jobs:
   build-docker-push:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    permissions:
-      contents: read
-      packages: write           # 如果需要推送到 GitHub Container Registry
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      # 登录到 GitHub Container Registry（自动使用 GITHUB_TOKEN）
+      - name: Login to GHCR
+        uses: docker/login-action@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
-          context: .             # Dockerfile 在项目根目录
-          platforms: linux/amd64,linux/arm64   # 支持多架构（可选）
+          context: .
+          platforms: linux/amd64, linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/114514:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/114514:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/114514:latest
+            ghcr.io/${{ github.repository_owner }}/114514:${{ github.sha }}
