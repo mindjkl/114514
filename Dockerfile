@@ -12,4 +12,4 @@ RUN npm ci --omit=dev && npm run download-dist
 
 EXPOSE 3001
 WORKDIR /home/app/114514
-CMD ["node", "/home/app/114514/server/server.js"]   # ← 改用绝对路径
+CMD node /home/app/114514/server/server.js
