@@ -2,12 +2,12 @@ name: Build Docker Push Image
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master", "main" ]
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write   # 允许推送镜像到 GHCR
+  packages: write
 
 jobs:
   build-docker-push:
@@ -25,7 +25,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # 登录到 GitHub Container Registry（自动使用 GITHUB_TOKEN）
       - name: Login to GHCR
         uses: docker/login-action@v4
         with:
