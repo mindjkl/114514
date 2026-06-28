@@ -211,6 +211,23 @@
                 </div>
             </div>
 
+            <!-- Backup -->
+            <div class="mb-4">
+                <label class="form-label">
+                    {{ $t("Backup") }}
+                </label>
+                <div>
+                    <button class="btn btn-outline-primary" type="button" :disabled="exporting" @click="exportBackup">
+                        <font-awesome-icon v-if="exporting" icon="spinner" spin />
+                        <font-awesome-icon v-else icon="download" />
+                        {{ exporting ? $t("exportingBackup") : $t("exportBackup") }}
+                    </button>
+                    <div class="form-text">
+                        {{ $t("exportBackupDescription") }}
+                    </div>
+                </div>
+            </div>
+
             <!-- Save Button -->
             <div>
                 <button class="btn btn-primary" type="submit">
@@ -234,6 +251,7 @@ export default {
     data() {
         return {
             timezoneList: timezoneList(),
+            exporting: false,
         };
     },
 
@@ -253,6 +271,29 @@ export default {
     },
 
     methods: {
+        /**
+         * Export backup of all data as kuma.db
+         * @returns {void}
+         */
+        exportBackup() {
+            this.exporting = true;
+            this.$root.getSocket().emit("exportBackup", (res) => {
+                this.exporting = false;
+                if (res.ok) {
+                    // Trigger download by creating a temporary link
+                    const a = document.createElement("a");
+                    a.href = res.downloadUrl;
+                    a.download = res.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    this.$root.toast("success", "Backup exported successfully");
+                } else {
+                    this.$root.toastRes(res);
+                }
+            });
+        },
+
         /**
          * Save the settings
          * @returns {void}

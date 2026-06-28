@@ -110,6 +110,7 @@ log.debug("server", "Importing 2FA Modules");
 const notp = require("notp");
 const base32 = require("thirty-two");
 
+const Backup = require("./backup");
 const { UptimeKumaServer } = require("./uptime-kuma-server");
 const server = UptimeKumaServer.getInstance();
 const io = (module.exports.io = server.io);
@@ -349,6 +350,22 @@ let needSetup = false;
     });
 
     // Basic Auth Router here
+
+    // Backup download endpoint
+    app.get("/api/backup/download", async (request, response) => {
+        try {
+            const backupPath = await Backup.createBackup();
+            const filename = "kuma.db";
+            response.download(backupPath, filename, (err) => {
+                if (err) {
+                    log.error("backup", "Download failed: " + err.message);
+                }
+            });
+        } catch (e) {
+            log.error("backup", "Backup failed: " + e.message);
+            response.status(500).send("Backup failed: " + e.message);
+        }
+    });
 
     // Prometheus API metrics  /metrics
     // With Basic Auth using the first user's username/password
@@ -1467,6 +1484,24 @@ let needSetup = false;
                     ok: false,
                     msg: e.message,
                     msgi18n: !!e.msgi18n,
+                });
+            }
+        });
+
+        socket.on("exportBackup", async (callback) => {
+            try {
+                checkLogin(socket);
+                const backupPath = await Backup.createBackup();
+                callback({
+                    ok: true,
+                    filename: "kuma.db",
+                    downloadUrl: "/api/backup/download",
+                });
+            } catch (e) {
+                log.error("backup", e);
+                callback({
+                    ok: false,
+                    msg: e.message,
                 });
             }
         });
