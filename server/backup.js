@@ -6,6 +6,14 @@ const Database = require("./database");
 const { log } = require("../src/util");
 
 /**
+ * Patch knex SQLite dialect to use @louislam/sqlite3 instead of the default sqlite3 package
+ */
+function patchSQLiteDialect() {
+    const Dialect = require("knex/lib/dialects/sqlite3/index.js");
+    Dialect.prototype._driver = () => require("@louislam/sqlite3");
+}
+
+/**
  * Type mapping from MySQL/MariaDB to SQLite
  */
 const MYSQL_TO_SQLITE_TYPE = {
@@ -131,6 +139,7 @@ class Backup {
         }
 
         // Create SQLite connection for writing the backup
+        patchSQLiteDialect();
         const sqliteKnex = knex({
             client: "sqlite3",
             connection: { filename: backupPath },
